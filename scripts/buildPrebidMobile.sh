@@ -40,11 +40,11 @@ fi
 mkdir -p "$LOG_DIR"
 touch "$LOG_FILE_FRAMEWORK"
 
-echo -e "\n\n${GREEN}INSTALL PODS${NC}\n\n"
+# echo -e "\n\n${GREEN}INSTALL PODS${NC}\n\n"
 
-export PATH="/Users/distiller/.gem/ruby/2.7.0/bin:$PATH"
-gem install cocoapods
-pod install --repo-update
+# export PATH="/Users/distiller/.gem/ruby/2.7.0/bin:$PATH"
+# gem install cocoapods
+# pod install --repo-update
 
 echo -e "\n\n${GREEN}BUILD PREBID MOBILE${NC}\n\n"
 
@@ -63,8 +63,7 @@ do
 	-workspace PrebidMobile.xcworkspace \
 	-scheme "${schemes[$n]}" \
 	-configuration Release \
-	-arch arm64 \
-	-sdk "iphoneos" \
+	-destination 'generic/platform=iOS' \
 	-derivedDataPath $XCODE_BUILD_DIR \
 	-archivePath "$XCODE_ARCHIVE_DIR/${schemes[$n]}.xcarchive" \
 	> "$LOG_FILE_FRAMEWORK" 2>&1 || { echo -e "${RED}Error in build check log "$LOG_FILE_FRAMEWORK_ABSOLUTE"${NC}"; exit 1;}
@@ -78,8 +77,7 @@ do
 	-workspace PrebidMobile.xcworkspace \
 	-scheme "${schemes[$n]}" \
 	-configuration Release \
-	-arch x86_64 \
-	-sdk "iphonesimulator" \
+	-destination 'generic/platform=iOS Simulator' \
 	-derivedDataPath $XCODE_BUILD_DIR \
 	-archivePath "$XCODE_ARCHIVE_DIR/${schemes[$n]}$POSTFIX_SIMULATOR.xcarchive" \
 	> "$LOG_FILE_FRAMEWORK" 2>&1 || { echo -e "${RED}Error in build check log "$LOG_FILE_FRAMEWORK_ABSOLUTE"${NC}"; exit 1;}
