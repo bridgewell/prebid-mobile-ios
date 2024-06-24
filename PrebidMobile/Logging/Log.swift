@@ -63,7 +63,7 @@ public class Log: NSObject {
     static func log(_ object: Any, logLevel: LogLevel, filename: String, line: Int, function: String) {
         if isLoggingEnabled(for: logLevel) {
             let finalMessage = "\(sdkName): \(Date().toString()) \(logLevel.stringValue)[\(sourceFileName(filePath: filename))]:\(line) \(function) -> \(object)"
-            print(finalMessage)
+            debugPrint(finalMessage)
             serialWriteToLog(finalMessage)
         }
     }
@@ -146,10 +146,6 @@ public class Log: NSObject {
     private static var logFileURL = getURLForDoc(sdkName + ".txt")
     
     private class func isLoggingEnabled(for currentLevel: LogLevel) -> Bool {
-        #if !(DEBUG)
-        return false
-        #endif
-        
         if currentLevel.rawValue < Log.logLevel.rawValue {
             return false
         }
@@ -172,17 +168,4 @@ extension Date {
     func toString() -> String {
         return Log.dateFormatter.string(from: self as Date)
     }
-}
-
-/// Wrapping Swift.print() within DEBUG flag
-///
-/// - Note: *print()* might cause [security vulnerabilities](https://codifiedsecurity.com/mobile-app-security-testing-checklist-ios/)
-///
-/// - Parameter object: The object which is to be logged
-///
-func print(_ object: Any) {
-    // Only allowing in DEBUG mode
-    #if DEBUG
-    Swift.print(object)
-    #endif
 }
