@@ -63,7 +63,7 @@ public class Log: NSObject {
     static func log(_ object: Any, logLevel: LogLevel, filename: String, line: Int, function: String) {
         if isLoggingEnabled(for: logLevel) {
             let finalMessage = "\(sdkName): \(Date().toString()) \(logLevel.stringValue)[\(sourceFileName(filePath: filename))]:\(line) \(function) -> \(object)"
-            debugPrint(finalMessage)
+            print(finalMessage)
             serialWriteToLog(finalMessage)
         }
     }

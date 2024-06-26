@@ -58,14 +58,6 @@
 }
 
 - (void)requestBidsWithCompletion:(void (^)(BidResponse *, NSError *))completion {
-    @weakify(self);
-    [PBMUserAgentService.shared fetchUserAgentWithCompletion:^(NSString * _Nonnull userAgent) {
-        @strongify(self);
-        [self makeRequestWithCompletion:completion];
-    }];
-}
-
-- (void)makeRequestWithCompletion:(void (^)(BidResponse *, NSError *))completion {
     NSError * const setupError = [self findErrorInSettings];
     if (setupError) {
         completion(nil, setupError);
@@ -80,7 +72,7 @@
     self.completion = completion ?: ^(BidResponse *r, NSError *e) {};
     
     NSString * const requestString = [self getRTBRequest];
-    
+           
     NSError * hostURLError = nil;
     NSString * const requestServerURL = [Host.shared getHostURLWithHost:self.sdkConfiguration.prebidServerHost error:&hostURLError];
     
@@ -91,8 +83,10 @@
     
     const NSInteger rawTimeoutMS_onRead     = self.sdkConfiguration.timeoutMillis;
     NSNumber * const dynamicTimeout_onRead  = self.sdkConfiguration.timeoutMillisDynamic;
-    
-    const NSTimeInterval postTimeout = (dynamicTimeout_onRead ? dynamicTimeout_onRead.doubleValue : (rawTimeoutMS_onRead / 1000.0));
+        
+    const NSTimeInterval postTimeout = (dynamicTimeout_onRead
+                                        ? dynamicTimeout_onRead.doubleValue
+                                        : (rawTimeoutMS_onRead / 1000.0));
     
     @weakify(self);
     NSDate * const requestDate = [NSDate date];
@@ -114,10 +108,11 @@
         if (serverResponse.error) {
             PBMLogInfo(@"Bid Request Error: %@", [serverResponse.error localizedDescription]);
             completion(nil, serverResponse.error);
+            
             return;
         }
         
-        PBMLogInfo(@"Bid Response: %@", [[NSString alloc] initWithData:serverResponse.rawData encoding:NSUTF8StringEncoding]);
+        PBMLogInfo(@"Bid Response: %@", [self getBidResponseJsonString:serverResponse.rawData]);
         
         NSError *trasformationError = nil;
         BidResponse * const _Nullable bidResponse = [PBMBidResponseTransformer transformResponse:serverResponse error:&trasformationError];
@@ -126,7 +121,7 @@
             NSNumber * const tmaxrequest = bidResponse.tmaxrequest;
             if (tmaxrequest) {
                 NSDate * const responseDate = [NSDate date];
-                
+
                 const NSTimeInterval bidResponseTimeout = tmaxrequest.doubleValue / 1000.0;
                 const NSTimeInterval remoteTimeout = ([responseDate timeIntervalSinceDate:requestDate]
                                                       + bidResponseTimeout
@@ -158,6 +153,32 @@
         
         completion(bidResponse, trasformationError);
     }];
+}
+
+- (NSString *) getBidResponseJsonString:(NSData *) jsonData {
+    NSError *error;
+    // Deserialize JSON data into an Objective-C object
+    id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+    
+    if (error) {
+        NSLog(@"Error deserializing JSON: %@", error.localizedDescription);
+        return @"";
+    }
+    
+    if ([NSJSONSerialization isValidJSONObject:jsonObject]) {
+        // Serialize the Objective-C object back into JSON data with pretty printing
+        NSData *prettyPrintedData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
+        
+        if (error) {
+            NSLog(@"Error serializing JSON: %@", error.localizedDescription);
+            return @"";
+        }
+        
+        // Convert the pretty printed JSON data to a string
+        return [[NSString alloc] initWithData:prettyPrintedData encoding:NSUTF8StringEncoding];
+    } else {
+        return @"";
+    }
 }
 
 - (NSString *)getRTBRequest {
